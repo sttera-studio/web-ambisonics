@@ -129,6 +129,7 @@ function ResonanceAudio(context, options) {
     position: options.listenerPosition,
     forward: options.listenerForward,
     up: options.listenerUp,
+    channelMap: options.listenerChannelMap,
   });
 
   // Create auxillary audio nodes.

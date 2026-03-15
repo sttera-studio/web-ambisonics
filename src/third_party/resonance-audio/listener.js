@@ -104,7 +104,9 @@ function Listener(context, options) {
     // Create audio nodes.
   this._context = context;
   if (this._ambisonicOrder == 1) {
-    this._renderer = Omnitone.createFOARenderer(context, {});
+    this._renderer = Omnitone.createFOARenderer(context, {
+      channelMap: options.channelMap,
+    });
   } else if (this._ambisonicOrder > 1) {
     this._renderer = Omnitone.createHOARenderer(context, {
       ambisonicOrder: this._ambisonicOrder,

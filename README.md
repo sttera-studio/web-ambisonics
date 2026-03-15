@@ -1,6 +1,6 @@
 # web-ambisonics
 
-The most advavanced JavaScript library for ambisonics audio.  
+The most advanced JavaScript library for ambisonics audio.  
 
 Browser-first 3D audio toolkit that vendors and modernizes Omnitone and the Resonance Audio Web SDK.
 
@@ -20,6 +20,16 @@ python3 -m http.server 8080
 
 1. Use headphones to hear a moving oscillator source in 3D.
 2. Edit `example/main.js` to change source position, tone, and scene options.
+
+## Explicit format profile (new)
+
+```js
+import {createOmnitoneRenderer, validateAmbisonicProfile} from './src/index.js';
+validateAmbisonicProfile({layout: 'fuma', normalization: 'fuma', order: 1});
+const renderer = createOmnitoneRenderer(audioContext, {
+  profile: {layout: 'fuma', normalization: 'fuma', order: 1},
+});
+```
 
 ## License and notices
 
