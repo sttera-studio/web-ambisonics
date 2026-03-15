@@ -1,0 +1,12 @@
+This project includes code from:
+
+- Omnitone (https://github.com/GoogleChrome/omnitone)
+  Copyright 2016 Google Inc.
+  Licensed under the Apache License, Version 2.0.
+
+- Resonance Audio Web SDK (https://github.com/resonance-audio/resonance-audio-web-sdk)
+  Copyright 2017 Google Inc.
+  Licensed under the Apache License, Version 2.0.
+
+Additional notice for Omnitone HRIR resources is preserved at:
+src/third_party/omnitone/resources/NOTICE
