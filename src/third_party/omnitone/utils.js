@@ -199,10 +199,6 @@ Utils.mergeBufferListByChannel = function(context, bufferList) {
   let bufferNumberOfChannel = 0;
 
   for (let i = 0; i < bufferList.length; ++i) {
-    if (bufferNumberOfChannel > 32) {
-      Utils.throw('Utils.mergeBuffer: Number of channels cannot exceed 32.' +
-          '(got ' + bufferNumberOfChannel + ')');
-    }
     if (bufferLength !== bufferList[i].length) {
       Utils.throw('Utils.mergeBuffer: AudioBuffer lengths are ' +
           'inconsistent. (expected ' + bufferLength + ' but got ' +
@@ -214,6 +210,10 @@ Utils.mergeBufferListByChannel = function(context, bufferList) {
           bufferList[i].sampleRate + ')');
     }
     bufferNumberOfChannel += bufferList[i].numberOfChannels;
+    if (bufferNumberOfChannel > 32) {
+      Utils.throw('Utils.mergeBuffer: Number of channels cannot exceed 32.' +
+          '(got ' + bufferNumberOfChannel + ')');
+    }
   }
 
   const buffer = context.createBuffer(
@@ -244,7 +244,7 @@ Utils.splitBufferbyChannel = function(context, audioBuffer, splitBy) {
         audioBuffer.numberOfChannels + ' splitted by ' + splitBy + ')');
   }
 
-  const bufflerList = [];
+  const bufferList = [];
   let sourceChannelIndex = 0;
   const numberOfSplittedBuffer =
       Math.ceil(audioBuffer.numberOfChannels / splitBy);
@@ -257,7 +257,7 @@ Utils.splitBufferbyChannel = function(context, audioBuffer, splitBy) {
             audioBuffer.getChannelData(sourceChannelIndex++));
       }
     }
-    bufflerList.push(buffer);
+    bufferList.push(buffer);
   }
 
   return bufferList;

@@ -4,16 +4,33 @@
   "description": "Modern browser-first ambisonics and 3D audio library based on Omnitone and Resonance Audio.",
   "type": "module",
   "main": "./src/index.js",
+  "types": "./types/index.d.ts",
   "exports": {
-    ".": "./src/index.js"
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "types",
+    "NOTICE",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "keywords": [
     "audio",
     "ambisonics",
     "spatial-audio",
-    "webaudio",
-    "omnitone",
-    "resonance-audio"
+    "webaudio"
   ],
-  "license": "GPL-3.0-or-later"
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }
+

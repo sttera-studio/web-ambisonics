@@ -120,11 +120,13 @@ function Source(scene, options) {
 
   // Member variables.
   this._scene = scene;
+  this._isDisposed = false;
   this._position = options.position;
   this._forward = options.forward;
   this._up = options.up;
   this._dx = new Float32Array(3);
   this._right = Utils.crossProduct(this._forward, this._up);
+  this._smoothingTimeConstant = 0.01;
 
   // Create audio nodes.
   let context = scene._context;
@@ -173,6 +175,9 @@ function Source(scene, options) {
  * @param {Number} z
  */
 Source.prototype.setPosition = function(x, y, z) {
+  if (this._isDisposed) {
+    return;
+  }
   // Assign new position.
   this._position[0] = x;
   this._position[1] = y;
@@ -181,9 +186,10 @@ Source.prototype.setPosition = function(x, y, z) {
   // Handle far-field effect.
   let distance = this._scene._room.getDistanceOutsideRoom(
     this._position[0], this._position[1], this._position[2]);
-    let gain = _computeDistanceOutsideRoom(distance);
-  this._toLate.gain.value = gain;
-  this._toEarly.gain.value = gain;
+  let gain = _computeDistanceOutsideRoom(distance);
+  const now = this._scene._context.currentTime;
+  this._toLate.gain.setTargetAtTime(gain, now, this._smoothingTimeConstant);
+  this._toEarly.gain.setTargetAtTime(gain, now, this._smoothingTimeConstant);
 
   this._update();
 };
@@ -191,6 +197,9 @@ Source.prototype.setPosition = function(x, y, z) {
 
 // Update the source when changing the listener's position.
 Source.prototype._update = function() {
+  if (this._isDisposed) {
+    return;
+  }
   // Compute distance to listener.
   for (let i = 0; i < 3; i++) {
     this._dx[i] = this._position[i] - this._scene._listener.position[i];
@@ -224,6 +233,9 @@ Source.prototype._update = function() {
  * {@linkcode Utils.ATTENUATION_ROLLOFFS ATTENUATION_ROLLOFFS}.
  */
 Source.prototype.setRolloff = function(rolloff) {
+  if (this._isDisposed) {
+    return;
+  }
   this._attenuation.setRolloff(rolloff);
 };
 
@@ -233,6 +245,9 @@ Source.prototype.setRolloff = function(rolloff) {
  * @param {Number} minDistance
  */
 Source.prototype.setMinDistance = function(minDistance) {
+  if (this._isDisposed) {
+    return;
+  }
   this._attenuation.minDistance = minDistance;
 };
 
@@ -242,6 +257,9 @@ Source.prototype.setMinDistance = function(minDistance) {
  * @param {Number} maxDistance
  */
 Source.prototype.setMaxDistance = function(maxDistance) {
+  if (this._isDisposed) {
+    return;
+  }
   this._attenuation.maxDistance = maxDistance;
 };
 
@@ -251,7 +269,13 @@ Source.prototype.setMaxDistance = function(maxDistance) {
  * @param {Number} gain
  */
 Source.prototype.setGain = function(gain) {
-  this.input.gain.value = gain;
+  if (this._isDisposed) {
+    return;
+  }
+  this.input.gain.setTargetAtTime(
+      gain,
+      this._scene._context.currentTime,
+      this._smoothingTimeConstant);
 };
 
 
@@ -266,6 +290,9 @@ Source.prototype.setGain = function(gain) {
  */
 Source.prototype.setOrientation = function(forwardX, forwardY, forwardZ,
     upX, upY, upZ) {
+  if (this._isDisposed) {
+    return;
+  }
   this._forward[0] = forwardX;
   this._forward[1] = forwardY;
   this._forward[2] = forwardZ;
@@ -284,6 +311,9 @@ Source.prototype.setOrientation = function(forwardX, forwardY, forwardZ,
  * The Matrix4 representing the object position and rotation in world space.
  */
 Source.prototype.setFromMatrix = function(matrix4) {
+  if (this._isDisposed) {
+    return;
+  }
   this._right[0] = matrix4.elements[0];
   this._right[1] = matrix4.elements[1];
   this._right[2] = matrix4.elements[2];
@@ -311,6 +341,9 @@ Source.prototype.setFromMatrix = function(matrix4) {
  * @param {Number} sourceWidth (in degrees).
  */
 Source.prototype.setSourceWidth = function(sourceWidth) {
+  if (this._isDisposed) {
+    return;
+  }
   this._encoder.setSourceWidth(sourceWidth);
   this.setPosition(this._position[0], this._position[1], this._position[2]);
 };
@@ -326,8 +359,31 @@ Source.prototype.setSourceWidth = function(sourceWidth) {
  * Determines the sharpness of the directivity pattern (1 to Inf).
  */
 Source.prototype.setDirectivityPattern = function(alpha, sharpness) {
+  if (this._isDisposed) {
+    return;
+  }
   this._directivity.setPattern(alpha, sharpness);
   this.setPosition(this._position[0], this._position[1], this._position[2]);
+};
+
+
+/**
+ * Dispose source audio graph and release scene references.
+ */
+Source.prototype.dispose = function() {
+  if (this._isDisposed) {
+    return;
+  }
+  this._isDisposed = true;
+  _safeDisconnect(this.input);
+  _safeDisconnect(this._toLate);
+  _safeDisconnect(this._toEarly);
+  _safeDisconnect(this._attenuation.input);
+  _safeDisconnect(this._attenuation.output);
+  _safeDisconnect(this._directivity.input);
+  _safeDisconnect(this._directivity.output);
+  _safeDisconnect(this._encoder.input);
+  _safeDisconnect(this._encoder.output);
 };
 
 
@@ -348,6 +404,18 @@ function _computeDistanceOutsideRoom(distance) {
     gain = Math.max(0, Math.min(1, gain));
   }
   return gain;
+}
+
+
+function _safeDisconnect(node) {
+  if (!node || typeof node.disconnect !== 'function') {
+    return;
+  }
+  try {
+    node.disconnect();
+  } catch (_error) {
+    // Ignore duplicate/invalid disconnection attempts.
+  }
 }
 
 

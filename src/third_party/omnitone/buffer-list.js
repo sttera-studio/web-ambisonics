@@ -73,6 +73,7 @@ function BufferList(context, bufferData, options) {
       ? bufferData
       : bufferData.slice(0);
   this._numberOfTasks = this._bufferData.length;
+  this._isSettled = false;
 
   this._resolveHandler = null;
   this._rejectHandler = new Function();
@@ -106,11 +107,31 @@ BufferList.prototype._promiseGenerator = function(resolve, reject) {
     this._rejectHandler = reject;
   }
 
+  if (this._bufferData.length === 0) {
+    this._isSettled = true;
+    this._resolveHandler([]);
+    return;
+  }
+
   for (let i = 0; i < this._bufferData.length; ++i) {
     this._options.dataType === BufferDataType.BASE64
         ? this._launchAsyncLoadTask(i)
         : this._launchAsyncLoadTaskXHR(i);
   }
+};
+
+/**
+ * Rejects the current loading operation once.
+ * @private
+ * @param {string} message
+ */
+BufferList.prototype._fail = function(message) {
+  if (this._isSettled) {
+    return;
+  }
+  this._isSettled = true;
+  this._rejectHandler(message);
+  Utils.log(message);
 };
 
 
@@ -127,11 +148,9 @@ BufferList.prototype._launchAsyncLoadTask = function(taskId) {
         that._updateProgress(taskId, audioBuffer);
       },
       function(errorMessage) {
-        that._updateProgress(taskId, null);
         const message = 'BufferList: decoding ArrayByffer("' + taskId +
             '" from Base64-encoded data failed. (' + errorMessage + ')';
-        that._rejectHandler(message);
-        Utils.throw(message);
+        that._fail(message);
       });
 };
 
@@ -155,25 +174,20 @@ BufferList.prototype._launchAsyncLoadTaskXHR = function(taskId) {
             that._updateProgress(taskId, audioBuffer);
           },
           function(errorMessage) {
-            that._updateProgress(taskId, null);
             const message = 'BufferList: decoding "' +
                 that._bufferData[taskId] + '" failed. (' + errorMessage + ')';
-            that._rejectHandler(message);
-            Utils.log(message);
+            that._fail(message);
           });
     } else {
       const message = 'BufferList: XHR error while loading "' +
           that._bufferData[taskId] + '". (' + xhr.status + ' ' +
           xhr.statusText + ')';
-      that._rejectHandler(message);
-      Utils.log(message);
+      that._fail(message);
     }
   };
 
   xhr.onerror = function(event) {
-    that._updateProgress(taskId, null);
-    that._rejectHandler();
-    Utils.log(
+    that._fail(
         'BufferList: XHR network failed on loading "' +
         that._bufferData[taskId] + '".');
   };
@@ -188,6 +202,9 @@ BufferList.prototype._launchAsyncLoadTaskXHR = function(taskId) {
  * @param {AudioBuffer} audioBuffer Decoded AudioBuffer object.
  */
 BufferList.prototype._updateProgress = function(taskId, audioBuffer) {
+  if (this._isSettled) {
+    return;
+  }
   this._bufferList[taskId] = audioBuffer;
 
   if (this._options.verbose) {
@@ -198,6 +215,7 @@ BufferList.prototype._updateProgress = function(taskId, audioBuffer) {
   }
 
   if (--this._numberOfTasks === 0) {
+    this._isSettled = true;
     const messageString = this._options.dataType === BufferDataType.BASE64
         ? this._bufferData.length + ' AudioBuffers from Base64-encoded HRIRs'
         : this._bufferData.length + ' files via XHR';

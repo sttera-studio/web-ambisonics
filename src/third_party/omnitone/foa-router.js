@@ -63,7 +63,12 @@ function FOARouter(context, channelMap) {
  * @param {Number[]} channelMap - A new channel map for FOA stream.
  */
 FOARouter.prototype.setChannelMap = function(channelMap) {
-  if (!Array.isArray(channelMap)) {
+  if (!Array.isArray(channelMap) || channelMap.length !== 4) {
+    return;
+  }
+  const isValid = channelMap.every((entry) =>
+    Number.isInteger(entry) && entry >= 0 && entry <= 3);
+  if (!isValid || new Set(channelMap).size !== 4) {
     return;
   }
 

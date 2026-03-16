@@ -95,6 +95,7 @@ function Listener(context, options) {
   // Member variables.
   this.position = new Float32Array(3);
   this._tempMatrix3 = new Float32Array(9);
+  this._isRendererReady = false;
 
   // Select the appropriate HRIR filters using 2-channel chunks since
   // multichannel audio is not yet supported by a majority of browsers.
@@ -125,15 +126,24 @@ function Listener(context, options) {
     // Connect pre-rotated soundfield to renderer.
     that.input.connect(that._renderer.input);
 
-    // Connect rotated soundfield to ambisonic output.
-    if (that._ambisonicOrder > 1) {
+    // Connect rotated soundfield to ambisonic output with defensive guards.
+    if (that._ambisonicOrder > 1 && that._renderer._hoaRotator &&
+        that._renderer._hoaRotator.output) {
       that._renderer._hoaRotator.output.connect(that.ambisonicOutput);
-    } else {
+    } else if (that._renderer._foaRotator && that._renderer._foaRotator.output) {
       that._renderer._foaRotator.output.connect(that.ambisonicOutput);
+    } else {
+      Utils.log('Listener: Ambisonic output tap is unavailable.');
     }
 
     // Connect binaurally-rendered soundfield to binaural output.
     that._renderer.output.connect(that.output);
+
+    that._isRendererReady = true;
+    // Re-apply pending orientation once renderer graph is fully ready.
+    that._renderer.setRotationMatrix3(that._tempMatrix3);
+  }).catch(function(error) {
+    Utils.log('Listener: Renderer initialization failed.', error);
   });
 
   // Set orientation and update rotation matrix accordingly.
@@ -164,7 +174,9 @@ Listener.prototype.setOrientation = function(forwardX, forwardY, forwardZ,
   this._tempMatrix3[6] = forwardX;
   this._tempMatrix3[7] = forwardY;
   this._tempMatrix3[8] = forwardZ;
-  this._renderer.setRotationMatrix3(this._tempMatrix3);
+  if (this._isRendererReady) {
+    this._renderer.setRotationMatrix3(this._tempMatrix3);
+  }
 };
 
 

@@ -91,6 +91,9 @@ function Encoder(context, options) {
   this.setAmbisonicOrder(options.ambisonicOrder);
   this._azimuth = options.azimuth;
   this._elevation = options.elevation;
+  this._lastAzimuthIndex = undefined;
+  this._lastElevationIndex = undefined;
+  this._lastSpreadIndex = undefined;
   this.setSourceWidth(options.sourceWidth);
 }
 
@@ -121,6 +124,9 @@ Encoder.prototype.setAmbisonicOrder = function(ambisonicOrder) {
     this._channelGain[i].connect(this._merger, 0, i);
   }
   this._merger.connect(this.output);
+  this._lastAzimuthIndex = undefined;
+  this._lastElevationIndex = undefined;
+  this._lastSpreadIndex = undefined;
 };
 
 
@@ -152,6 +158,15 @@ Encoder.prototype.setDirection = function(azimuth, elevation) {
     azimuth += 360;
   }
   elevation = Math.round(Math.min(90, Math.max(-90, elevation))) + 90;
+
+  if (this._lastAzimuthIndex === azimuth &&
+      this._lastElevationIndex === elevation &&
+      this._lastSpreadIndex === this._spreadIndex) {
+    return;
+  }
+  this._lastAzimuthIndex = azimuth;
+  this._lastElevationIndex = elevation;
+  this._lastSpreadIndex = this._spreadIndex;
 
   // Assign gains to each output.
   this._channelGain[0].gain.value = Tables.MAX_RE_WEIGHTS[this._spreadIndex][0];
@@ -196,18 +211,18 @@ Encoder.prototype.setSourceWidth = function(sourceWidth) {
 Encoder.validateAmbisonicOrder = function(ambisonicOrder) {
   if (isNaN(ambisonicOrder) || ambisonicOrder == undefined) {
     Utils.log('Error: Invalid ambisonic order',
-    options.ambisonicOrder, '\nUsing ambisonicOrder=1 instead.');
+    ambisonicOrder, '\nUsing ambisonicOrder=1 instead.');
     ambisonicOrder = 1;
   } else if (ambisonicOrder < 1) {
     Utils.log('Error: Unable to render ambisonic order',
-    options.ambisonicOrder, '(Min order is 1)',
+    ambisonicOrder, '(Min order is 1)',
     '\nUsing min order instead.');
     ambisonicOrder = 1;
   } else if (ambisonicOrder > Tables.SPHERICAL_HARMONICS_MAX_ORDER) {
     Utils.log('Error: Unable to render ambisonic order',
-    options.ambisonicOrder, '(Max order is',
+    ambisonicOrder, '(Max order is',
     Tables.SPHERICAL_HARMONICS_MAX_ORDER, ')\nUsing max order instead.');
-    options.ambisonicOrder = Tables.SPHERICAL_HARMONICS_MAX_ORDER;
+    ambisonicOrder = Tables.SPHERICAL_HARMONICS_MAX_ORDER;
   }
   return ambisonicOrder;
 };

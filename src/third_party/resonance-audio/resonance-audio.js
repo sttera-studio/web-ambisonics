@@ -161,11 +161,35 @@ ResonanceAudio.prototype.createSource = function(options) {
 
 
 /**
+ * Remove and dispose an existing source from this scene.
+ * @param {Source} source
+ * @return {boolean}
+ */
+ResonanceAudio.prototype.removeSource = function(source) {
+  const index = this._sources.indexOf(source);
+  if (index === -1) {
+    return false;
+  }
+  this._sources.splice(index, 1);
+  if (source && typeof source.dispose === 'function') {
+    source.dispose();
+  }
+  return true;
+};
+
+
+/**
  * Set the scene's desired ambisonic order.
  * @param {Number} ambisonicOrder Desired ambisonic order.
  */
 ResonanceAudio.prototype.setAmbisonicOrder = function(ambisonicOrder) {
-  this._ambisonicOrder = Encoder.validateAmbisonicOrder(ambisonicOrder);
+  const validatedOrder = Encoder.validateAmbisonicOrder(ambisonicOrder);
+  if (validatedOrder !== this._ambisonicOrder) {
+    Utils.log(
+      'ResonanceAudio: setAmbisonicOrder is immutable after scene creation. ' +
+      'Create a new scene to use ambisonic order ' + validatedOrder + '.'
+    );
+  }
 };
 
 
@@ -235,6 +259,20 @@ ResonanceAudio.prototype.setListenerFromMatrix = function(matrix) {
  */
 ResonanceAudio.prototype.setSpeedOfSound = function(speedOfSound) {
   this._room.speedOfSound = speedOfSound;
+};
+
+
+/**
+ * Dispose scene graph and all associated sources.
+ */
+ResonanceAudio.prototype.dispose = function() {
+  this._sources.slice().forEach((source) => this.removeSource(source));
+  this._room.output.disconnect();
+  this._listener.output.disconnect();
+  this._listener.ambisonicOutput.disconnect();
+  this.output.disconnect();
+  this.ambisonicOutput.disconnect();
+  this.ambisonicInput.disconnect();
 };
 
 
