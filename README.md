@@ -2,7 +2,7 @@
 
 The most advanced JavaScript library for ambisonics audio.  
 
-Browser-first 3D audio toolkit extending old libraries Omnitone and the Resonance Audio Web SDK.
+Browser-first 3D audio toolkit extending previous libraries Omnitone and the Resonance Audio Web SDK.
 
 ## Structure
 

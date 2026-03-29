@@ -151,6 +151,25 @@ function getExpectedChannelCount(order) {
   return (order + 1) * (order + 1);
 }
 
+/**
+ * Largest ambisonic order N the destination device count allows, with
+ * (N+1)^2 <= maxChannelCount. Uses floor(sqrt(maxChannels) - 1) for N >= 2;
+ * first-order AmbiX needs four channels.
+ * @param {BaseAudioContext|undefined} context
+ * @returns {number|null} Platform limit, or null if unknown or fewer than four channels.
+ */
+export function resolveMaxOrder(context) {
+  const maxCh = context?.destination?.maxChannelCount;
+  if (!Number.isFinite(maxCh) || maxCh < 1) {
+    return null;
+  }
+  const raw = Math.floor(Math.sqrt(maxCh) - 1);
+  if (raw < 1) {
+    return maxCh >= 4 ? 1 : null;
+  }
+  return raw;
+}
+
 function assertCustomHrirList(hrirSet, hrirPathList, order) {
   if (hrirSet !== 'custom-url') {
     return;
@@ -340,13 +359,14 @@ export function getWebAudioCapabilities(context) {
   const contextState = context?.state ?? 'unknown';
   const autoplayLikelyBlocked = contextState === 'suspended';
   const maxDestinationChannels = context?.destination?.maxChannelCount ?? null;
+  const platformMaxOrder = resolveMaxOrder(context);
   return {
     hasWindow,
     hasAudioContext,
     contextState,
     autoplayLikelyBlocked,
     maxDestinationChannels,
-    maxAmbisonicOrder: MAX_SUPPORTED_ORDER,
+    maxAmbisonicOrder: platformMaxOrder ?? MAX_SUPPORTED_ORDER,
   };
 }
 
@@ -865,6 +885,7 @@ export default {
   assertAmbisonicChannelCount,
   validateHrirPathList,
   getWebAudioCapabilities,
+  resolveMaxOrder,
   resolveProfileWithFallback,
   connectChecked,
   disconnectSafe,

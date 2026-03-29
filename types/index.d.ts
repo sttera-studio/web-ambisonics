@@ -123,13 +123,17 @@ export function validateHrirPathList(
   hrirPathList?: string[]
 ): {mode: 'default' | 'custom-url'; pathList: string[]};
 
+/** Platform HOA order limit from `context.destination.maxChannelCount`, or null if unusable. */
+export function resolveMaxOrder(context?: BaseAudioContext): number | null;
+
 export function getWebAudioCapabilities(context?: BaseAudioContext): {
   hasWindow: boolean;
   hasAudioContext: boolean;
   contextState: string;
   autoplayLikelyBlocked: boolean;
   maxDestinationChannels: number | null;
-  maxAmbisonicOrder: 3;
+  /** Upper bound implied by the destination channel count; may exceed {@link MAX_SUPPORTED_ORDER}. */
+  maxAmbisonicOrder: number;
 };
 
 export function resolveProfileWithFallback(
@@ -238,6 +242,7 @@ declare const _default: {
   assertAmbisonicChannelCount: typeof assertAmbisonicChannelCount;
   validateHrirPathList: typeof validateHrirPathList;
   getWebAudioCapabilities: typeof getWebAudioCapabilities;
+  resolveMaxOrder: typeof resolveMaxOrder;
   resolveProfileWithFallback: typeof resolveProfileWithFallback;
   connectChecked: typeof connectChecked;
   disconnectSafe: typeof disconnectSafe;
