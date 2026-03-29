@@ -123,6 +123,35 @@ export function validateHrirPathList(
   hrirPathList?: string[]
 ): {mode: 'default' | 'custom-url'; pathList: string[]};
 
+export interface AmbisonicEncoderConfig {
+  order?: AmbisonicOrder;
+  /** Degrees; 0 = front (+x), 90 = left (+y). */
+  azimuthDeg?: number;
+  /** Degrees; −90…90, positive above horizontal. */
+  elevationDeg?: number;
+  /** Meters; NFC corner frequencies use f_l = l·c/(2πr). */
+  distance?: number;
+  speedOfSound?: number;
+  /** Minimum clamp for `setDistance` / NFC (meters). */
+  minDistance?: number;
+}
+
+export declare class AmbisonicEncoder {
+  constructor(context: BaseAudioContext, config?: AmbisonicEncoderConfig);
+  input: GainNode;
+  output: GainNode;
+  readonly order: AmbisonicOrder;
+  setDirection(azimuthDeg: number, elevationDeg: number): void;
+  setDistance(rMeters: number): void;
+  setSpeedOfSound(c: number): void;
+  dispose(): void;
+}
+
+export function createAmbisonicEncoder(
+  context: BaseAudioContext,
+  config?: AmbisonicEncoderConfig
+): AmbisonicEncoder;
+
 /** Platform HOA order limit from `context.destination.maxChannelCount`, or null if unusable. */
 export function resolveMaxOrder(context?: BaseAudioContext): number | null;
 
@@ -234,13 +263,16 @@ export const ResonanceAudio: new (
 declare const _default: {
   Omnitone: typeof Omnitone;
   ResonanceAudio: typeof ResonanceAudio;
+  AmbisonicEncoder: typeof AmbisonicEncoder;
   createOmnitoneRenderer: typeof createOmnitoneRenderer;
   createResonanceScene: typeof createResonanceScene;
+  createAmbisonicEncoder: typeof createAmbisonicEncoder;
   safeCreateOmnitoneRenderer: typeof safeCreateOmnitoneRenderer;
   safeCreateResonanceScene: typeof safeCreateResonanceScene;
   validateAmbisonicProfile: typeof validateAmbisonicProfile;
   assertAmbisonicChannelCount: typeof assertAmbisonicChannelCount;
   validateHrirPathList: typeof validateHrirPathList;
+  createAmbisonicEncoder: typeof createAmbisonicEncoder;
   getWebAudioCapabilities: typeof getWebAudioCapabilities;
   resolveMaxOrder: typeof resolveMaxOrder;
   resolveProfileWithFallback: typeof resolveProfileWithFallback;

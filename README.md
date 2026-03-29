@@ -32,6 +32,15 @@ npm run typecheck
 - Ambisonics invariants in `types/contracts.d.ts`.
 - Package exports ship ESM runtime + TypeScript types.
 
+## Standards and Literature
+
+- Encoder NFC: per-degree high-pass before gains (Daniel-style NFC-HOA).
+- SH plane-wave coefficients: scipy N3D-ACN real, then Schmidt SN3D scaling.
+- Angles: degrees API; internally azimuth and colatitude match spaudiopy conventions.
+- Omnitone and AmbiX decoders expect ACN channel order, SN3D normalization.
+- Web Audio API channel graphs; respect context.sampleRate and destination limits.
+- Runtime capability defaults use maxChannelCount when context reports finite values.
+- Vendored Omnitone/Resonance remain Apache-2.0 alongside project GPL at root.
 
 ## License and notices
 

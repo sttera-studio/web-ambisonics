@@ -1,5 +1,6 @@
 import Omnitone from './third_party/omnitone/omnitone.js';
 import ResonanceAudio from './third_party/resonance-audio/main.js';
+import {AmbisonicEncoder} from './ambisonic-encoder/ambisonic-encoder.js';
 
 const SUPPORTED_LAYOUTS = ['ambix', 'fuma'];
 const SUPPORTED_NORMALIZATIONS = ['sn3d', 'fuma'];
@@ -346,6 +347,22 @@ export function validateHrirPathList(profile, hrirPathList) {
     mode: hrirSet,
     pathList: hrirPathList ?? [],
   };
+}
+
+/**
+ * Mono-in / HOA-out plane-wave encoder (ACN / SN3D) with per-degree NFC-HOA
+ * high-pass shaping before angular weighting.
+ */
+export function createAmbisonicEncoder(context, options = {}) {
+  const order = options.order ?? 1;
+  if (!Number.isInteger(order) || order < 1 || order > MAX_SUPPORTED_ORDER) {
+    throw createDomainError(
+      'ERR_INVALID_ORDER',
+      `Invalid ambisonic order "${order}". Supported integer range: 1-${MAX_SUPPORTED_ORDER}.`,
+      `Use an integer ambisonic order between 1 and ${MAX_SUPPORTED_ORDER}.`
+    );
+  }
+  return new AmbisonicEncoder(context, options);
 }
 
 /**
@@ -870,20 +887,23 @@ export function listSourceIds(scene) {
   return Array.from(getManagedSourceMap(scene).keys());
 }
 
-export {Omnitone, ResonanceAudio};
+export {Omnitone, ResonanceAudio, AmbisonicEncoder};
 export {FUMA_FOA_CHANNEL_MAP, AMBIX_FOA_CHANNEL_MAP, MAX_SUPPORTED_ORDER};
 export {getExpectedChannelCount};
 
 export default {
   Omnitone,
   ResonanceAudio,
+  AmbisonicEncoder,
   createOmnitoneRenderer,
   createResonanceScene,
+  createAmbisonicEncoder,
   safeCreateOmnitoneRenderer,
   safeCreateResonanceScene,
   validateAmbisonicProfile,
   assertAmbisonicChannelCount,
   validateHrirPathList,
+  createAmbisonicEncoder,
   getWebAudioCapabilities,
   resolveMaxOrder,
   resolveProfileWithFallback,
